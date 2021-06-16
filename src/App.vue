@@ -14,24 +14,30 @@
     <main>
         <!-- New member form -->
         <h2>Ajouter un(e) Argonaute</h2>
-        <form class="new-member-form">
+        <form @submit.prevent="addNewArgonaut()" class="new-member-form">
             <label for="name">Nom de l&apos;Argonaute</label>
             <input
                 id="name"
                 name="name"
+                v-model="inputName"
                 type="text"
                 placeholder="Charalampos"
             />
             <button type="submit">Envoyer</button>
         </form>
-		<!-- Member list -->
+        <!-- Member list -->
         <h2>Membres de l'équipage</h2>
-        <section class="member-list">
-            <div class="member-item">Eleftheria</div>
-            <div class="member-item">Gennadios</div>
-            <div class="member-item">Lysimachos</div>
+		<button class="member-reload" @click="loadArgonauts()">Recharger la liste</button>
+        <section v-if="argonautsList.length" class="member-list">
+            <div
+                class="member-item"
+                v-for="{ id, name } in argonautsList"
+                :key="id"
+            >
+                {{ name }}
+            </div>
         </section>
-        
+        <section v-else>Chargement en cours...</section>
     </main>
 
     <footer>
@@ -40,7 +46,34 @@
 </template>
 
 <script setup lang="ts">
+ref: inputName = "";
 
+ref: argonautsList = [] as Array<{ id: number; name: string }>;
+
+const loadArgonauts = async () => {
+    argonautsList = await fetch(
+        `${import.meta.env.VITE_API_URL}/argonaut?select=*`,
+        {
+            headers: {
+                apikey: `${import.meta.env.VITE_API_KEY}`,
+            },
+        }
+    ).then((res) => res.json());
+};
+const addNewArgonaut = async () => {
+    await fetch(`${import.meta.env.VITE_API_URL}/argonaut`, {
+        method: "POST",
+        headers: {
+            apikey: `${import.meta.env.VITE_API_KEY}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name: inputName }),
+    });
+    inputName = "";
+    loadArgonauts();
+};
+
+loadArgonauts();
 </script>
 
 <style>
@@ -56,6 +89,8 @@ body {
 main {
     max-width: 960px;
     margin: 0 auto;
+	display: flex;
+	flex-direction: column;
 }
 
 header {
@@ -87,6 +122,18 @@ label {
     text-align: center;
 }
 
+.member-reload {
+	margin: 0 auto;
+}
+
+.member-list {
+	margin: 1.25rem auto 0 auto;
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	place-content: center;
+	gap: 0.5rem 3rem;
+}
+
 .member-item {
     padding: 0.25em 0;
 }
@@ -98,4 +145,7 @@ footer {
     background: #f76c6c;
     padding: 0.25em 0;
 }
+
+
+
 </style>
